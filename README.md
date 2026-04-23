@@ -68,60 +68,50 @@ Shows all implemented layers and interactions: client CLI, tracker command modul
 ```mermaid
 flowchart LR
     subgraph CL["Client Layer"]
-        U["User<br/>CLI Operator"]
-        C1["Client Peer A<br/>Command Loop + Peer Server :9000"]
-        C2["Client Peer B<br/>Command Loop + Peer Server :9000"]
-        OUT["Output Delivery<br/>Downloaded File + Progress Status"]
+        U["User CLI Operator"]
+        C1["Client Peer A - Command Loop and Peer Server 9000"]
+        C2["Client Peer B - Command Loop and Peer Server 9000"]
+        OUT["Output Delivery - Downloaded File and Progress Status"]
     end
 
     subgraph SL["Server Layer"]
-        subgraph TS["Tracker Service (Go TCP API :8001)"]
-            API["Command API Router<br/>parseCommand + handleLine"]
-            AUTH["Auth Module<br/>create_user/login/logout"]
-            GRP["Group Module<br/>create/join/accept/list"]
-            FILEMETA["File Metadata Module<br/>upload/list/stop_share/get_file_path"]
-            PEERDISC["Peer Discovery Module<br/>register_peer/get_peer_info"]
-            DLSTAT["Download Status Module<br/>show_downloads/download_complete"]
+        subgraph TS["Tracker Service - Go TCP API 8001"]
+            API["Command API Router - parseCommand and handleLine"]
+            AUTH["Auth Module - create_user, login, logout"]
+            GRP["Group Module - create, join, accept, list"]
+            FILEMETA["File Metadata Module - upload, list, stop_share, get_file_path"]
+            PEERDISC["Peer Discovery Module - register_peer, get_peer_info"]
+            DLSTAT["Download Status Module - show_downloads, download_complete"]
         end
     end
 
     subgraph DL["Data Layer"]
-        MEM["In-Memory State<br/>users, groups, peerInfo, userFiles, downloads"]
-        FS1["Peer A Local File System<br/>actual shared file bytes"]
-        FS2["Peer B Local File System<br/>download destination bytes"]
+        MEM["In Memory State - users, groups, peerInfo, userFiles, downloads"]
+        FS1["Peer A Local File System - shared file bytes"]
+        FS2["Peer B Local File System - download destination bytes"]
     end
 
-    U -->|CLI Input Command| C1
-    C1 -->|TCP Request (sync)| API
-    API -->|Auth checks| AUTH
-    API -->|Group operations| GRP
-    API -->|File metadata operations| FILEMETA
-    API -->|Peer lookup| PEERDISC
-    API -->|Download status write/read| DLSTAT
-    AUTH -->|Read/Write user credentials| MEM
-    GRP -->|Read/Write group membership| MEM
-    FILEMETA -->|Read/Write file visibility| MEM
-    PEERDISC -->|Read/Write online peer map| MEM
-    DLSTAT -->|Read/Write transfer state| MEM
-    API -->|Response text (sync)| C1
+    U -->|CLI input command| C1
+    C1 -->|TCP request sync| API
+    API -->|auth checks| AUTH
+    API -->|group operations| GRP
+    API -->|file metadata operations| FILEMETA
+    API -->|peer lookup| PEERDISC
+    API -->|download status read write| DLSTAT
+    AUTH -->|read write user credentials| MEM
+    GRP -->|read write group membership| MEM
+    FILEMETA -->|read write file visibility| MEM
+    PEERDISC -->|read write online peer map| MEM
+    DLSTAT -->|read write transfer state| MEM
+    API -->|response text sync| C1
 
-    C1 -->|get_peer_info + permission check| API
-    C1 -->|Direct TCP P2P request: download group file| C2
-    C2 -->|Read file bytes| FS1
-    FS1 -->|Chunk stream 8KB blocks (sync)| C1
-    C1 -->|Write output file| FS2
-    C1 -->|download_complete (sync)| API
-    C1 -->|Progress + final status| OUT
-
-    click API "./cmd/tracker/main.go" "Tracker command dispatcher and request handling"
-    click AUTH "./cmd/tracker/main.go" "Authentication command handlers"
-    click GRP "./cmd/tracker/main.go" "Group ownership and membership workflow"
-    click FILEMETA "./cmd/tracker/main.go" "File registration and visibility logic"
-    click PEERDISC "./cmd/tracker/main.go" "Peer registration and peer lookup"
-    click DLSTAT "./cmd/tracker/main.go" "Download lifecycle status tracking"
-    click C1 "./cmd/client/main.go" "Client CLI + tracker and peer networking"
-    click C2 "./cmd/client/main.go" "Peer listener and file sender"
-    click MEM "./cmd/tracker/main.go" "In-memory maps as current data store"
+    C1 -->|get_peer_info and permission check| API
+    C1 -->|direct TCP P2P request| C2
+    C2 -->|read file bytes| FS1
+    FS1 -->|chunk stream 8KB sync| C1
+    C1 -->|write output file| FS2
+    C1 -->|download_complete sync| API
+    C1 -->|progress and final status| OUT
 
     classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#0f172a;
     classDef backend fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#052e16;
@@ -147,7 +137,7 @@ sequenceDiagram
     participant ClientB as Client B (File Owner Peer)
     participant FS as Owner File System
 
-    User->>ClientA: download_file <group_id> <filename> <dest_path>
+    User->>ClientA: download_file [group_id] [filename] [dest_path]
     ClientA->>Tracker: get_peer_info(group_id, filename)
     Tracker->>Tracker: Validate login + group membership + file visibility
     Tracker-->>ClientA: owner_user + owner_ip:owner_port
